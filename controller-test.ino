@@ -1,4 +1,4 @@
-1#include <MIDI.h>
+#include <MIDI.h>
 
  /*
  * codeexample for useing a 4051 * analog multiplexer / demultiplexer
@@ -6,7 +6,9 @@
  *
  * edited by Ross R.
  * edited by Igor de Oliveira SÃ¡.
- */  
+ */
+
+MIDI_CREATE_DEFAULT_INSTANCE();
 
 int r0 = 0;      //value of select pin at the 4051 (s0)
 int r1 = 0;      //value of select pin at the 4051 (s1)
@@ -20,13 +22,18 @@ int val;
 int vals[32];
 int aPins[] = {21, 20, 19, 18};
 bool change = false;
+int ccs[32];
 
-void setup(){  
+void setup(){
+  MIDI.begin();
   pinMode(s0, OUTPUT);
   pinMode(s1, OUTPUT);
   pinMode(s2, OUTPUT);
   for (int i = 0; i < sizeof(aPins) - 1; i ++) {
     pinMode(aPins[i], INPUT);
+  }
+  for (int i = 0; i < sizeof(ccs) - 1; i ++) {
+    ccs[i] = i+1;
   }
 }
 
@@ -49,8 +56,11 @@ void loop () {
   //    if (vals[count] + 1 < val || vals[count) - 1 > val || val = 1023) {
         change = true;
         vals[ctrlcount] = val;
-        ctrlcount++;
+        int cc = getCc(ctrlcount);
+        int ch = getCh(ctrlcount);
+        MIDI.sendControlChange(cc, val/8, ch);
       }
+      ctrlcount++;
     }
   }  
 }
@@ -65,13 +75,21 @@ void printVals() {
 }
 
 void setMuxChannel(int ch) {
-      // select the bit
-    r0 = bitRead(ch,0);
-    r1 = bitRead(ch,1);
-    r2 = bitRead(ch,2);
+    // select the bit
+  r0 = bitRead(ch,0);
+  r1 = bitRead(ch,1);
+  r2 = bitRead(ch,2);
 
-    digitalWrite(s0, r0);
-    digitalWrite(s1, r1);
-    digitalWrite(s2, r2);
+  digitalWrite(s0, r0);
+  digitalWrite(s1, r1);
+  digitalWrite(s2, r2);
+}
+
+int getCc(int ctrl) {
+  return ccs[ctrl];
+}
+
+int getCh(int ctrl) {
+  return 1;
 }
 
